@@ -1,7 +1,9 @@
 package hel
 
-import "fmt"
+import "github.com/salvatore-081/hel/pkg"
 
-func Test() {
-	fmt.Println("hello world")
+func NewClient(host string) pkg.Client {
+	return pkg.Client{
+		Url: host,
+	}
 }
