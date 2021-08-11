@@ -14,7 +14,7 @@ type Client struct {
 	Url string
 }
 
-func (c *Client) Do(query string) (decodedResponse models.Response, e error) {
+func (c *Client) Do(query string, v interface{}) error {
 	request := models.Request{
 		Query:         query,
 		OperationName: nil,
@@ -23,18 +23,30 @@ func (c *Client) Do(query string) (decodedResponse models.Response, e error) {
 
 	jsonEncodedRequest, e := json.Marshal(request)
 	if e != nil {
-		return decodedResponse, e
+		return e
 	}
 
 	buffer := bytes.NewBuffer(jsonEncodedRequest)
 
-	response, e := http.Post(c.Url, contentType, buffer)
+	r, e := http.Post(c.Url, contentType, buffer)
 	if e != nil {
-		return decodedResponse, e
+		return e
 	}
-	defer response.Body.Close()
+	defer r.Body.Close()
 
-	e = json.NewDecoder(response.Body).Decode(&response)
+	var response models.Response
 
-	return decodedResponse, e
+	e = json.NewDecoder(r.Body).Decode(&response)
+
+	data, e := json.Marshal(*&response.Data)
+	if e != nil {
+		return e
+	}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	decoder.DisallowUnknownFields()
+	e = decoder.Decode(&v)
+
+	return e
 }
