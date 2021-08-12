@@ -14,39 +14,46 @@ type Client struct {
 	Url string
 }
 
-func (c *Client) Do(query string, v interface{}) error {
-	request := models.Request{
+func (c *Client) Do(query string, d interface{}, e interface{}) error {
+	gqlRequest := models.GraphQLRequest{
 		Query:         query,
 		OperationName: nil,
 		Variables:     nil,
 	}
 
-	jsonEncodedRequest, e := json.Marshal(request)
-	if e != nil {
-		return e
+	jsonEncodedRequest, err := json.Marshal(gqlRequest)
+	if err != nil {
+		return err
 	}
 
 	buffer := bytes.NewBuffer(jsonEncodedRequest)
 
-	r, e := http.Post(c.Url, contentType, buffer)
-	if e != nil {
-		return e
+	response, err := http.Post(c.Url, contentType, buffer)
+	if err != nil {
+		return err
 	}
-	defer r.Body.Close()
+	defer response.Body.Close()
 
-	var response models.Response
+	var gqlResponse models.GraphQLResponse
 
-	e = json.NewDecoder(r.Body).Decode(&response)
-
-	data, e := json.Marshal(*&response.Data)
-	if e != nil {
-		return e
+	err = json.NewDecoder(response.Body).Decode(&gqlResponse)
+	if err != nil {
+		return err
 	}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.UseNumber()
-	decoder.DisallowUnknownFields()
-	e = decoder.Decode(&v)
+	if d != nil {
+		err = graphqlDecoder(gqlResponse.Data, d)
+		if err != nil {
+			return err
+		}
+	}
 
-	return e
+	if e != nil {
+		err = graphqlDecoder(gqlResponse.Errors, e)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
