@@ -13,24 +13,41 @@ func NewClient(host string) pkg.Client {
 }
 
 func main() {
-	client := NewClient("https://api.spacex.land/graphql/")
+	// client := NewClient("https://api.spacex.land/graphql/")
+	// 	query := `
+	// query{
+	//   ships{
+	//     name
+	//   }
+	// }
+	//   `
+	// 	type Ships struct {
+	// 		Ships []struct {
+	// 			Name string
+	// 		}
+	// 	}
+	// 	var ships interface{}
+	var user map[string]interface{}
+	var errors []map[string]interface{}
+	client := NewClient("http://localhost:8081/graphql")
 	query := `
 query{
-  ships{
-    name
+  user(username:"diagnostc"){
+    id
+    organization{
+      id
+      name
+      eid
+    }
   }
 }
-  `
-	type Ships struct {
-		Ships []struct {
-			Name string
-		}
-	}
-	var ships interface{}
-	e := client.Do(query, &ships, nil)
+`
+
+	e := client.Do(query, nil, nil, &user)
 	if e != nil {
-		fmt.Println(fmt.Sprintf("error => %s", e.Error()))
+		fmt.Println(fmt.Sprintf("DO ERROR => %s", e.Error()))
 	}
-	fmt.Println(fmt.Sprintf("ships => %v", ships))
+	fmt.Println(fmt.Sprintf("data => %v", user))
+	fmt.Println(fmt.Sprintf("errors => %v", errors))
 
 }
